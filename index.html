@@ -139,6 +139,14 @@
   }
   .feed-row:hover .feed-folder-btn { display: flex; }
   .feed-folder-btn:hover { background: var(--glass-hover); color: var(--text-secondary); }
+  .folder-rename {
+    flex-shrink: 0; width: 18px; height: 18px; border-radius: 5px;
+    border: none; background: transparent; cursor: pointer;
+    color: var(--text-muted);
+    display: none; align-items: center; justify-content: center;
+  }
+  .folder-header:hover .folder-rename { display: flex; }
+  .folder-rename:hover { background: var(--glass-hover); color: var(--text-secondary); }
   .nav-item .badge {
     margin-left: auto; font-size: 10.5px; color: var(--text-muted);
     background: rgba(100,75,35,0.1); padding: 1px 6px; border-radius: 20px;
@@ -477,6 +485,9 @@ const DEFAULT_FEEDS = [
   { id:'nyt',    name:'New York Times', color:'#c8b78a', url:'https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml', folder:'News' },
   { id:'lemonde',name:'Le Monde',       color:'#9caf88', url:'https://www.lemonde.fr/rss/une.xml',                        folder:'News' },
   { id:'cnn',    name:'CNN',            color:'#b08d57', url:'http://rss.cnn.com/rss/cnn_topstories.rss',                 folder:'News' },
+  { id:'ft',     name:'Financial Times',color:'#d0b97f', url:'https://www.ft.com/rss/home',                               folder:'News' },
+  { id:'econ',   name:'The Economist',  color:'#8fa9c4', url:'https://www.economist.com/latest/rss.xml',                  folder:'News' },
+  { id:'cnbc',   name:'CNBC',           color:'#3f6fa8', url:'https://www.cnbc.com/id/100003114/device/rss/rss.html',     folder:'News' },
   { id:'verge',  name:'The Verge',      color:'#5b9ee0', url:'https://www.theverge.com/rss/index.xml',                   folder:'Tech' },
 ];
 
@@ -572,6 +583,21 @@ function createFolder() {
   if (!trimmed || customFolders.includes(trimmed)) return;
   customFolders.push(trimmed);
   saveCustomFolders();
+  renderSidebar();
+}
+function renameFolder(ev, oldName) {
+  ev.stopPropagation();
+  const newName = prompt('Rename folder:', oldName);
+  if (!newName) return;
+  const trimmed = newName.trim();
+  if (!trimmed || trimmed === oldName) return;
+  feeds.forEach(f => { if (f.folder === oldName) f.folder = trimmed; });
+  saveFeeds();
+  const idx = customFolders.indexOf(oldName);
+  if (idx !== -1) customFolders[idx] = trimmed;
+  saveCustomFolders();
+  if (collapsedFolders.has(oldName)) { collapsedFolders.delete(oldName); collapsedFolders.add(trimmed); }
+  if (currentView === 'folder:' + oldName) currentView = 'folder:' + trimmed;
   renderSidebar();
 }
 function loadState() {
@@ -788,6 +814,9 @@ function renderSidebar() {
         </svg>
         <span class="folder-label">${esc(folderName)}</span>
         ${folderUnread > 0 ? `<span class="badge-new">${folderUnread}</span>` : ''}
+        <button class="folder-rename" title="Rename folder" onclick="renameFolder(event,'${esc(folderName)}')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        </button>
       </div>
       <div class="folder-feeds" style="${collapsed ? 'display:none' : ''}">
         ${folderFeeds.map(f => renderFeedItem(f)).join('')}
