@@ -459,10 +459,10 @@ const REFRESH_MS = 15 * 60 * 1000;    // auto-refresh interval while open
 
 // Default feeds on first run. Colors drawn from the blue/khaki palette.
 const DEFAULT_FEEDS = [
-  { id:'hn',    name:'Hacker News',    color:'#c8b78a', url:'https://hnrss.org/frontpage' },
-  { id:'verge', name:'The Verge',      color:'#5b9ee0', url:'https://www.theverge.com/rss/index.xml' },
-  { id:'mit',   name:'MIT Tech Review',color:'#8fa9c4', url:'https://www.technologyreview.com/feed/' },
-  { id:'nasa',  name:'NASA',           color:'#3f6fa8', url:'https://www.nasa.gov/feed/' },
+  { id:'nyt',    name:'New York Times', color:'#c8b78a', url:'https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml', folder:'News' },
+  { id:'lemonde',name:'Le Monde',       color:'#9caf88', url:'https://www.lemonde.fr/rss/une.xml',                        folder:'News' },
+  { id:'cnn',    name:'CNN',            color:'#b08d57', url:'http://rss.cnn.com/rss/cnn_topstories.rss',                 folder:'News' },
+  { id:'verge',  name:'The Verge',      color:'#5b9ee0', url:'https://www.theverge.com/rss/index.xml',                   folder:'Tech' },
 ];
 
 const PALETTE = ['#5b9ee0','#c8b78a','#8fa9c4','#3f6fa8','#9caf88','#b08d57','#7ba7d0','#d0b97f'];
