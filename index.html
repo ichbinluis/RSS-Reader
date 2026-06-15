@@ -330,14 +330,16 @@
   .modal p.hint { font-size: 12px; color: var(--text-muted); line-height: 1.5; margin-top: -4px; }
   .field { display: flex; flex-direction: column; gap: 5px; }
   .field label { font-size: 11px; color: var(--text-secondary); letter-spacing: 0.02em; }
-  .field input {
+  .field input, .field select {
     background: rgba(245,238,218,0.7); border: 1px solid var(--glass-border);
     border-radius: 10px; padding: 9px 12px; color: var(--text-primary);
     font-size: 13px; font-family: var(--font-sf); outline: none;
-    transition: border-color 0.15s;
+    transition: border-color 0.15s; width: 100%;
   }
-  .field input:focus { border-color: var(--accent); }
+  .field input:focus, .field select:focus { border-color: var(--accent); }
   .field input::placeholder { color: var(--text-muted); }
+  .field select { appearance: none; cursor: pointer; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238b6914' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; padding-right: 28px; }
+  .field select option { background: #ede5cf; }
   .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 4px; }
   .modal-error { font-size: 12px; color: #f87171; min-height: 14px; }
 
@@ -460,6 +462,17 @@
     <div class="field">
       <label>Name (optional)</label>
       <input id="feed-name" type="text" placeholder="Leave blank to auto-detect" autocomplete="off" />
+    </div>
+    <div class="field">
+      <label>Folder (optional)</label>
+      <select id="feed-folder" onchange="handleFolderSelect(this)">
+        <option value="">No folder</option>
+        <option value="__new__">+ New folder…</option>
+      </select>
+    </div>
+    <div class="field" id="new-folder-field" style="display:none">
+      <label>New folder name</label>
+      <input id="new-folder-name" type="text" placeholder="e.g. Sports" autocomplete="off" />
     </div>
     <div class="modal-error" id="modal-error"></div>
     <div class="modal-actions">
@@ -1028,8 +1041,22 @@ function openModal() {
   document.getElementById('feed-url').value = '';
   document.getElementById('feed-name').value = '';
   document.getElementById('modal-error').textContent = '';
+  document.getElementById('new-folder-name').value = '';
+  document.getElementById('new-folder-field').style.display = 'none';
+  // Populate folder dropdown with current folders
+  const allFolderNames = [...new Set([...feeds.filter(f => f.folder).map(f => f.folder), ...customFolders])];
+  const sel = document.getElementById('feed-folder');
+  sel.innerHTML = '<option value="">No folder</option>' +
+    allFolderNames.map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join('') +
+    '<option value="__new__">+ New folder…</option>';
+  sel.value = '';
   document.getElementById('modal').classList.add('open');
   setTimeout(() => document.getElementById('feed-url').focus(), 50);
+}
+function handleFolderSelect(sel) {
+  const show = sel.value === '__new__';
+  document.getElementById('new-folder-field').style.display = show ? '' : 'none';
+  if (show) setTimeout(() => document.getElementById('new-folder-name').focus(), 50);
 }
 function closeModal() {
   document.getElementById('modal').classList.remove('open');
@@ -1038,12 +1065,21 @@ function closeModal() {
 async function submitFeed() {
   const urlInput = document.getElementById('feed-url').value.trim();
   const nameInput = document.getElementById('feed-name').value.trim();
+  const folderSel = document.getElementById('feed-folder').value;
   const errEl = document.getElementById('modal-error');
+
+  let folderValue = '';
+  if (folderSel === '__new__') {
+    folderValue = document.getElementById('new-folder-name').value.trim();
+    if (!folderValue) { errEl.textContent = 'Please enter a name for the new folder.'; return; }
+  } else {
+    folderValue = folderSel;
+  }
 
   if (!urlInput) { errEl.textContent = 'Please enter a feed URL.'; return; }
   let url = urlInput;
   if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
-  try { new URL(url); } catch (e) { errEl.textContent = "That doesn’t look like a valid URL."; return; }
+  try { new URL(url); } catch (e) { errEl.textContent = "That doesn't look like a valid URL."; return; }
 
   errEl.textContent = '';
   const btnHost = (() => { try { return new URL(url).hostname.replace(/^www\./, ''); } catch (e) { return 'Feed'; } })();
@@ -1054,6 +1090,7 @@ async function submitFeed() {
     autoName: !nameInput,
     color: PALETTE[feeds.length % PALETTE.length],
     url,
+    folder: folderValue || undefined,
   };
 
   // Validate by trying to fetch + parse before committing.
@@ -1065,6 +1102,12 @@ async function submitFeed() {
   } catch (e) {
     errEl.textContent = 'Could not load that feed: ' + (e && e.message ? e.message : 'unknown error') + '. Double-check the URL or try again.';
     return;
+  }
+
+  // Register new folder if needed
+  if (folderSel === '__new__' && folderValue && !customFolders.includes(folderValue)) {
+    customFolders.push(folderValue);
+    saveCustomFolders();
   }
 
   feeds.push(feed);
