@@ -363,6 +363,92 @@
   .full-article pre { background: rgba(100,75,35,0.08); border-radius: 8px; padding: 1em; overflow-x: auto; margin: 1em 0; }
   .full-article code { background: rgba(100,75,35,0.08); border-radius: 4px; font-size: 13px; padding: 0.15em 0.4em; }
   .full-article pre code { background: none; padding: 0; }
+
+  /* ── Mobile top bar (hidden on desktop) ── */
+  .mobile-topbar {
+    display: none;
+    align-items: center; justify-content: space-between;
+    padding: 0 12px;
+    height: 52px; flex-shrink: 0;
+    border-bottom: 1px solid var(--glass-border);
+  }
+  .mobile-topbar .logo { font-size: 18px; }
+  .mobile-reader-bar {
+    display: none;
+    align-items: center; gap: 10px;
+    padding: 10px 14px 6px; flex-shrink: 0;
+    border-bottom: 1px solid var(--glass-border);
+  }
+  .sidebar-backdrop {
+    display: none; position: fixed; inset: 0;
+    z-index: 199; background: rgba(30,20,5,0.32);
+    backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
+  }
+  .sidebar-backdrop.open { display: block; }
+
+  /* ── Responsive layout ── */
+  @media (max-width: 768px) {
+    html, body { overflow: hidden; height: 100%; }
+
+    .app {
+      flex-direction: column;
+      padding: 0; gap: 0;
+      height: 100vh; height: 100dvh;
+      max-width: 100%;
+    }
+
+    /* Sidebar becomes a slide-out drawer */
+    .sidebar {
+      position: fixed;
+      top: 0; left: 0; bottom: 0;
+      width: 82vw; max-width: 300px;
+      z-index: 200;
+      border-radius: 0 22px 22px 0;
+      padding-top: max(env(safe-area-inset-top, 0px), 12px);
+      transform: translateX(-110%);
+      transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .sidebar.sidebar-open { transform: translateX(0); }
+
+    /* Mobile top bar visible */
+    .mobile-topbar { display: flex; flex-shrink: 0; }
+
+    /* List pane fills available space */
+    .list-pane {
+      width: 100%; flex: 1;
+      border-radius: 12px;
+      margin: 8px; width: calc(100% - 16px);
+      min-height: 0;
+    }
+
+    /* Reader slides in from the right as a full-screen overlay */
+    .reader {
+      position: fixed; inset: 0;
+      z-index: 150;
+      border-radius: 0;
+      transform: translateX(105%);
+      transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .reader.reader-open { transform: translateX(0); }
+
+    /* Back bar inside reader */
+    .mobile-reader-bar { display: flex; }
+
+    /* Reader header/body adjustments */
+    .reader-header { padding: 16px 20px 12px; }
+    .reader-title { font-size: 22px; }
+    .reader-scroll { padding: 18px 20px; }
+    .reader-footer { flex-wrap: wrap; }
+    .reader-footer .btn { font-size: 12px; padding: 7px 12px; }
+
+    /* Article list tweaks */
+    .filter-row { padding: 8px; gap: 6px; }
+    .list-header { padding: 12px 14px 10px; }
+
+    /* Sidebar actions layout on mobile */
+    .sidebar-actions { flex-direction: row; gap: 6px; }
+    .sidebar-actions .add-feed { flex: 1; padding: 8px 6px; font-size: 11.5px; }
+  }
 </style>
 </head>
 <body>
@@ -373,10 +459,23 @@
   <div class="orb orb3"></div>
 </div>
 
+<div class="sidebar-backdrop" id="sidebar-backdrop" onclick="closeSidebar()"></div>
+
 <div class="app">
 
+  <!-- Mobile top bar -->
+  <div class="glass mobile-topbar" id="mobile-topbar">
+    <button class="icon-btn" onclick="openSidebar()" title="Menu">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+    <div class="logo">FrontPage <em>RSS</em></div>
+    <button class="icon-btn" onclick="refreshAll()" title="Refresh">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+    </button>
+  </div>
+
   <!-- Sidebar -->
-  <nav class="glass sidebar">
+  <nav class="glass sidebar" id="sidebar">
     <div class="sidebar-header">
       <div class="logo">FrontPage <em>RSS</em></div>
       <button class="icon-btn" id="refresh-btn" onclick="refreshAll()" title="Refresh feeds">
@@ -418,6 +517,12 @@
 
   <!-- Reader -->
   <div class="glass reader" id="reader">
+    <!-- Back button shown only on mobile -->
+    <div class="mobile-reader-bar">
+      <button class="icon-btn" onclick="closeMobileReader()" title="Back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+    </div>
     <div class="reader-empty" id="reader-empty">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
         <path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/>
@@ -994,17 +1099,35 @@ function resetReader() {
 
 // ── Actions ──────────────────────────────────────────────────
 
+// ── Mobile sidebar + reader panels ───────────────────────────
+function isMobile() { return window.innerWidth <= 768; }
+function openSidebar() {
+  document.getElementById('sidebar').classList.add('sidebar-open');
+  document.getElementById('sidebar-backdrop').classList.add('open');
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('sidebar-open');
+  document.getElementById('sidebar-backdrop').classList.remove('open');
+}
+function closeMobileReader() {
+  document.getElementById('reader').classList.remove('reader-open');
+  currentId = null;
+  renderList();
+}
+
 function selectArticle(id) {
   currentId = id;
   const a = articles.find(x => x.id === id);
   if (a && a.unread) { a.unread = false; patchState(a.id, { read: true }); }
   renderAll();
+  if (isMobile()) document.getElementById('reader').classList.add('reader-open');
 }
 
 function setView(view) {
   currentView = view;
   resetReader();
   renderAll();
+  if (isMobile()) closeSidebar();
 }
 
 function setFilter(f, btn) {
