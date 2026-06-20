@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>FrontPage RSS</title>
 <script src="https://cdn.jsdelivr.net/npm/@mozilla/readability@0.5.0/Readability.js"></script>
 <style>
@@ -440,12 +440,26 @@
     .reader-header { padding: 16px 20px 12px; }
     .reader-title { font-size: 22px; }
     .reader-scroll { padding: 18px 20px; }
-    .reader-footer { flex-wrap: wrap; }
+    .reader-footer {
+      flex-wrap: wrap;
+      padding-bottom: max(env(safe-area-inset-bottom, 0px), 12px);
+    }
     .reader-footer .btn { font-size: 12px; padding: 7px 12px; }
 
     /* Article list tweaks */
     .filter-row { padding: 8px; gap: 6px; }
     .list-header { padding: 12px 14px 10px; }
+
+    /* Sidebar: pad bottom for home indicator */
+    .sidebar {
+      padding-bottom: max(env(safe-area-inset-bottom, 0px), 12px);
+    }
+
+    /* Mobile topbar: pad top for notch/status bar */
+    .mobile-topbar {
+      padding-top: env(safe-area-inset-top, 0px);
+      height: calc(52px + env(safe-area-inset-top, 0px));
+    }
 
     /* Sidebar actions layout on mobile */
     .sidebar-actions { flex-direction: row; gap: 6px; }
