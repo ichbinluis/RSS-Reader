@@ -244,6 +244,7 @@
     font-size: 27px; font-weight: 700; letter-spacing: -0.022em;
     line-height: 1.18; margin-bottom: 14px;
   }
+  .reader-title:hover { text-decoration: underline; text-underline-offset: 3px; text-decoration-color: rgba(107,76,42,0.4); }
   .reader-meta { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
   .reader-author { font-size: 12.5px; color: var(--text-secondary); }
   .reader-date { font-size: 12px; color: var(--text-muted); }
@@ -436,24 +437,30 @@
     /* Back bar inside reader */
     .mobile-reader-bar { display: flex; }
 
-    /* Reader header/body adjustments */
-    .reader-header { padding: 16px 20px 12px; }
-    .reader-title { font-size: 22px; }
-    .reader-scroll { padding: 18px 20px; }
+    /* Reader: ensure it's a proper flex column filling the fixed viewport */
+    .reader { display: flex; flex-direction: column; overflow: hidden; }
+    #reader-inner { height: auto !important; flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
+    .reader-scroll { flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 18px 20px; }
     .reader-footer {
-      flex-wrap: wrap;
-      padding-bottom: max(env(safe-area-inset-bottom, 0px), 12px);
+      flex-shrink: 0; flex-wrap: wrap;
+      padding-bottom: max(env(safe-area-inset-bottom, 0px), 20px);
     }
     .reader-footer .btn { font-size: 12px; padding: 7px 12px; }
+    .reader-header { padding: 16px 20px 12px; }
+    .reader-title { font-size: 22px; }
 
     /* Article list tweaks */
     .filter-row { padding: 8px; gap: 6px; }
     .list-header { padding: 12px 14px 10px; }
 
-    /* Sidebar: pad bottom for home indicator */
+    /* Sidebar: ensure actions are always visible at bottom */
     .sidebar {
-      padding-bottom: max(env(safe-area-inset-bottom, 0px), 12px);
+      padding-bottom: max(env(safe-area-inset-bottom, 0px), 16px);
+      overflow: hidden;
+      display: flex; flex-direction: column;
     }
+    .sidebar-scroll { flex: 1; min-height: 0; overflow-y: auto; }
+    .sidebar-actions { flex-shrink: 0; margin-top: 8px; }
 
     /* Mobile topbar: pad top for notch/status bar */
     .mobile-topbar {
@@ -1024,7 +1031,7 @@ function renderReader(a) {
 
   document.getElementById('reader-header').innerHTML = `
     <div class="reader-feed">${esc(a.feedName)}</div>
-    <div class="reader-title anim">${esc(a.title)}</div>
+    <div class="reader-title anim" onclick="openArticle()" title="Open article" style="cursor:pointer">${esc(a.title)}</div>
     <div class="reader-meta">
       <span class="reader-date">${esc(relativeTime(a.date))}</span>
     </div>`;
