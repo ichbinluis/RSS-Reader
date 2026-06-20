@@ -397,53 +397,80 @@
       max-width: 100%;
     }
 
-    /* Sidebar becomes a slide-out drawer — solid bg avoids backdrop-filter compositing bugs on iOS */
+    /* ── Sidebar drawer ── */
     .sidebar {
       position: fixed;
       top: 0; left: 0; bottom: 0;
       width: 82vw; max-width: 300px;
       z-index: 200;
       border-radius: 0 22px 22px 0;
-      padding-top: max(env(safe-area-inset-top, 0px), 12px);
-      transform: translateX(-110%);
-      transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+      /* Solid bg — avoids iOS backdrop-filter compositing bugs */
       background: #ede5cf;
-      backdrop-filter: none;
-      -webkit-backdrop-filter: none;
+      backdrop-filter: none; -webkit-backdrop-filter: none;
+      /* Layout */
+      display: flex; flex-direction: column; overflow: hidden;
+      padding: max(env(safe-area-inset-top,0px),12px) 12px max(env(safe-area-inset-bottom,0px),16px);
+      /* Slide-out animation */
+      transform: translateX(-110%);
+      transition: transform 0.28s cubic-bezier(0.4,0,0.2,1);
     }
     .sidebar.sidebar-open { transform: translateX(0); }
+    .sidebar-scroll { flex: 1; min-height: 0; overflow-y: auto; }
+    .sidebar-actions { flex-shrink: 0; flex-direction: row; gap: 6px; margin-top: 8px; }
+    .sidebar-actions .add-feed { flex: 1; padding: 8px 6px; font-size: 11.5px; }
 
-    /* Mobile top bar visible */
-    .mobile-topbar { display: flex; flex-shrink: 0; }
-
-    /* List pane fills available space */
-    .list-pane {
-      width: 100%; flex: 1;
-      border-radius: 12px;
-      margin: 8px; width: calc(100% - 16px);
-      min-height: 0;
+    /* ── Mobile top bar ── */
+    .mobile-topbar {
+      display: flex; flex-shrink: 0;
+      padding-top: env(safe-area-inset-top, 0px);
+      height: calc(52px + env(safe-area-inset-top, 0px));
     }
 
-    /* Reader slides in from the right as a full-screen overlay */
+    /* ── List pane fills remaining space ── */
+    .list-pane {
+      width: calc(100% - 16px); flex: 1; min-height: 0;
+      border-radius: 12px; margin: 8px;
+    }
+
+    /* ── Reader full-screen overlay ──
+       Solid bg + no backdrop-filter = same fix as sidebar.
+       Flex column: back-bar | scrollable-body | sticky-footer   */
     .reader {
       position: fixed; inset: 0;
       z-index: 150;
       border-radius: 0;
+      background: #ede5cf;
+      backdrop-filter: none; -webkit-backdrop-filter: none;
+      display: flex; flex-direction: column; overflow: hidden;
       transform: translateX(105%);
-      transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+      transition: transform 0.28s cubic-bezier(0.4,0,0.2,1);
     }
     .reader.reader-open { transform: translateX(0); }
 
-    /* Back bar inside reader */
-    .mobile-reader-bar { display: flex; }
+    /* Back bar */
+    .mobile-reader-bar { display: flex; flex-shrink: 0; }
 
-    /* Reader: ensure it's a proper flex column filling the fixed viewport */
-    .reader { display: flex; flex-direction: column; overflow: hidden; }
-    #reader-inner { height: auto !important; flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
-    .reader-scroll { flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 18px 20px; }
+    /* reader-inner: fill space after back-bar, column layout */
+    #reader-inner {
+      flex: 1; min-height: 0;
+      display: flex !important;
+      flex-direction: column;
+      overflow: hidden;
+      height: auto !important;
+    }
+
+    /* Scrollable article content */
+    .reader-scroll {
+      flex: 1; min-height: 0;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      padding: 18px 20px;
+    }
+
+    /* Footer always visible at bottom, above home indicator */
     .reader-footer {
       flex-shrink: 0; flex-wrap: wrap;
-      padding-bottom: max(env(safe-area-inset-bottom, 0px), 20px);
+      padding-bottom: max(env(safe-area-inset-bottom,0px), 24px);
     }
     .reader-footer .btn { font-size: 12px; padding: 7px 12px; }
     .reader-header { padding: 16px 20px 12px; }
@@ -452,25 +479,6 @@
     /* Article list tweaks */
     .filter-row { padding: 8px; gap: 6px; }
     .list-header { padding: 12px 14px 10px; }
-
-    /* Sidebar: ensure actions are always visible at bottom */
-    .sidebar {
-      padding-bottom: max(env(safe-area-inset-bottom, 0px), 16px);
-      overflow: hidden;
-      display: flex; flex-direction: column;
-    }
-    .sidebar-scroll { flex: 1; min-height: 0; overflow-y: auto; }
-    .sidebar-actions { flex-shrink: 0; margin-top: 8px; }
-
-    /* Mobile topbar: pad top for notch/status bar */
-    .mobile-topbar {
-      padding-top: env(safe-area-inset-top, 0px);
-      height: calc(52px + env(safe-area-inset-top, 0px));
-    }
-
-    /* Sidebar actions layout on mobile */
-    .sidebar-actions { flex-direction: row; gap: 6px; }
-    .sidebar-actions .add-feed { flex: 1; padding: 8px 6px; font-size: 11.5px; }
   }
 </style>
 </head>
