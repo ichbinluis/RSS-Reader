@@ -10,13 +10,13 @@
 
   :root {
     --font-sf: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", "Segoe UI", system-ui, sans-serif;
-    --glass-bg: rgba(192,194,201,0.72);
-    --glass-border: rgba(100,105,120,0.18);
-    --glass-hover: rgba(175,178,188,0.35);
-    --glass-active: rgba(160,163,175,0.42);
-    --text-primary: rgba(20,14,6,0.92);
-    --text-secondary: rgba(35,24,8,0.58);
-    --text-muted: rgba(35,24,8,0.38);
+    --glass-bg: rgba(255,255,255,0.30);
+    --glass-border: rgba(140,180,255,0.25);
+    --glass-hover: rgba(100,160,255,0.15);
+    --glass-active: rgba(100,160,255,0.28);
+    --text-primary: rgba(255,255,255,0.95);
+    --text-secondary: rgba(255,255,255,0.60);
+    --text-muted: rgba(255,255,255,0.35);
     --accent: #6b4c2a;
     --accent-dim: rgba(107,76,42,0.14);
     --khaki: #8b6914;
@@ -28,7 +28,7 @@
     font-family: var(--font-sf);
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
-    background: #C0C2C9;
+    background: #0f1b2d;
     color: var(--text-primary);
     overflow: hidden;
   }
@@ -42,9 +42,9 @@
     filter: blur(90px); opacity: 0.22;
     animation: drift 20s ease-in-out infinite alternate;
   }
-  .orb1 { width: 600px; height: 600px; background: #9ba3b8; top: -200px; left: -150px; animation-duration: 19s; }
-  .orb2 { width: 500px; height: 500px; background: #a8afc4; top: 20%; right: -100px; animation-duration: 25s; animation-delay: -8s; }
-  .orb3 { width: 450px; height: 450px; background: #b2b8cc; bottom: -120px; left: 25%; animation-duration: 21s; animation-delay: -4s; opacity: 0.18; }
+  .orb1 { width: 600px; height: 600px; background: #0a3a6e; top: -200px; left: -150px; animation-duration: 19s; }
+  .orb2 { width: 500px; height: 500px; background: #0d2d5a; top: 20%; right: -100px; animation-duration: 25s; animation-delay: -8s; }
+  .orb3 { width: 450px; height: 450px; background: #1a4f8a; bottom: -120px; left: 25%; animation-duration: 21s; animation-delay: -4s; opacity: 0.18; }
   @keyframes drift {
     0%   { transform: translate(0,0) scale(1); }
     50%  { transform: translate(40px,60px) scale(1.08); }
@@ -483,6 +483,17 @@
     .filter-row { padding: 8px; gap: 6px; }
     .list-header { padding: 12px 14px 10px; }
   }
+
+  div.glass.reader { background: rgba(255,255,255,0.60) !important; color: rgba(20,14,6,0.92); }
+  div.glass.reader .reader-header,
+  div.glass.reader .reader-scroll,
+  div.glass.reader .reader-scroll p,
+  div.glass.reader .reader-title,
+  div.glass.reader .reader-author,
+  div.glass.reader .reader-date,
+  div.glass.reader .reader-feed { color: rgba(20,14,6,0.92); }
+  div.glass.reader .reader-author { color: rgba(35,24,8,0.58); }
+  div.glass.reader .reader-date { color: rgba(35,24,8,0.38); }
 </style>
 </head>
 <body>
