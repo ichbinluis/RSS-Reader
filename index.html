@@ -484,16 +484,55 @@
     .list-header { padding: 12px 14px 10px; }
   }
 
-  div.glass.reader { background: rgba(255,255,255,0.60) !important; color: rgba(20,14,6,0.92); }
-  div.glass.reader .reader-header,
-  div.glass.reader .reader-scroll,
-  div.glass.reader .reader-scroll p,
-  div.glass.reader .reader-title,
-  div.glass.reader .reader-author,
-  div.glass.reader .reader-date,
-  div.glass.reader .reader-feed { color: rgba(20,14,6,0.92); }
-  div.glass.reader .reader-author { color: rgba(35,24,8,0.58); }
-  div.glass.reader .reader-date { color: rgba(35,24,8,0.38); }
+  /* ── White pane: dark text overrides ─────────────────────── */
+  /* Variables don't cascade into these panes correctly because
+     --text-primary is white (for the dark sidebar). We re-declare
+     dark equivalents scoped to each white-background pane.       */
+
+  .list-pane,
+  .glass.reader {
+    --pane-primary:   rgba(20,14,6,0.90);
+    --pane-secondary: rgba(20,14,6,0.55);
+    --pane-muted:     rgba(20,14,6,0.38);
+    --pane-hover:     rgba(20,14,6,0.05);
+    --pane-active:    rgba(20,14,6,0.09);
+    --pane-border:    rgba(20,14,6,0.10);
+    color: var(--pane-primary);
+  }
+
+  /* List pane: headers, titles, meta */
+  .list-pane .list-title   { color: var(--pane-primary); }
+  .list-pane .list-count   { color: var(--pane-muted); }
+  .list-pane .filter-btn   { color: var(--pane-secondary); border-color: var(--pane-border); }
+  .list-pane .filter-btn:hover  { color: var(--pane-primary); background: var(--pane-hover); }
+  .list-pane .filter-btn.active { color: var(--accent); background: var(--accent-dim); border-color: rgba(107,76,42,0.35); }
+  .list-pane .list-header  { border-bottom-color: var(--pane-border); }
+  .list-pane .filter-row   { border-bottom-color: var(--pane-border); }
+
+  /* Article items */
+  .list-pane .item-source  { color: inherit; }
+  .list-pane .item-title   { color: var(--pane-primary); }
+  .list-pane .article-item:not(.unread) .item-title { color: var(--pane-secondary); }
+  .list-pane .item-time    { color: var(--pane-muted); }
+  .list-pane .article-item { border-bottom-color: var(--pane-border); }
+  .list-pane .article-item:hover    { background: var(--pane-hover); }
+  .list-pane .article-item.selected { background: var(--pane-active); }
+
+  /* Reader pane */
+  .glass.reader { background: #ffffff !important; }
+  .glass.reader .reader-feed   { color: var(--accent); }
+  .glass.reader .reader-title  { color: var(--pane-primary); }
+  .glass.reader .reader-date,
+  .glass.reader .reader-author { color: var(--pane-muted); }
+  .glass.reader .reader-header { border-bottom-color: var(--pane-border); }
+  .glass.reader .reader-footer { border-top-color: var(--pane-border); }
+  .glass.reader .reader-scroll p,
+  .glass.reader .full-article  { color: var(--pane-primary); }
+  .glass.reader .reader-empty  { color: var(--pane-muted); }
+  .glass.reader .btn { color: var(--pane-secondary); border-color: var(--pane-border); background: transparent; }
+  .glass.reader .btn:hover { color: var(--pane-primary); background: var(--pane-hover); }
+  .glass.reader .btn-primary { color: var(--accent); background: var(--accent-dim); border-color: rgba(107,76,42,0.35); }
+  .glass.reader .btn-star.starred { color: var(--khaki); }
 </style>
 </head>
 <body>
