@@ -182,7 +182,6 @@
   .list-pane {
     width: 300px; flex-shrink: 0;
     display: flex; flex-direction: column; overflow: hidden;
-    background: #ffffff; backdrop-filter: none; -webkit-backdrop-filter: none;
   }
   .list-header {
     padding: 16px 18px 12px; border-bottom: 1px solid var(--glass-border);
@@ -489,7 +488,7 @@
      --text-primary is white (for the dark sidebar). We re-declare
      dark equivalents scoped to each white-background pane.       */
 
-  .list-pane,
+  /* Reader pane */
   .glass.reader {
     --pane-primary:   rgba(20,14,6,0.90);
     --pane-secondary: rgba(20,14,6,0.55);
@@ -499,26 +498,6 @@
     --pane-border:    rgba(20,14,6,0.10);
     color: var(--pane-primary);
   }
-
-  /* List pane: headers, titles, meta */
-  .list-pane .list-title   { color: var(--pane-primary); }
-  .list-pane .list-count   { color: var(--pane-muted); }
-  .list-pane .filter-btn   { color: var(--pane-secondary); border-color: var(--pane-border); }
-  .list-pane .filter-btn:hover  { color: var(--pane-primary); background: var(--pane-hover); }
-  .list-pane .filter-btn.active { color: var(--accent); background: var(--accent-dim); border-color: rgba(107,76,42,0.35); }
-  .list-pane .list-header  { border-bottom-color: var(--pane-border); }
-  .list-pane .filter-row   { border-bottom-color: var(--pane-border); }
-
-  /* Article items */
-  .list-pane .item-source  { color: inherit; }
-  .list-pane .item-title   { color: var(--pane-primary); }
-  .list-pane .article-item:not(.unread) .item-title { color: var(--pane-secondary); }
-  .list-pane .item-time    { color: var(--pane-muted); }
-  .list-pane .article-item { border-bottom-color: var(--pane-border); }
-  .list-pane .article-item:hover    { background: var(--pane-hover); }
-  .list-pane .article-item.selected { background: var(--pane-active); }
-
-  /* Reader pane */
   .glass.reader { background: #ffffff !important; }
   .glass.reader .reader-feed   { color: var(--accent); }
   .glass.reader .reader-title  { color: var(--pane-primary); }
