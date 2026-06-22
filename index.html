@@ -264,6 +264,7 @@
     font-size: 18px; color: rgba(100,76,30,0.78); line-height: 1.5; letter-spacing: -0.01em;
   }
 
+  #reader-inner { flex: 1; min-height: 0; flex-direction: column; overflow: hidden; }
   .reader-footer {
     padding: 12px 18px; border-top: 1px solid var(--glass-border);
     display: flex; gap: 8px; flex-shrink: 0;
@@ -560,7 +561,7 @@
       </svg>
       <p>Select an article to read</p>
     </div>
-    <div id="reader-inner" style="display:none;flex:1;display:none;flex-direction:column;overflow:hidden;height:100%;">
+    <div id="reader-inner" style="display:none">
       <div class="reader-header" id="reader-header"></div>
       <div class="reader-scroll" id="reader-body"></div>
       <div class="reader-footer">
@@ -618,6 +619,26 @@
   </div>
 </div>
 
+<!-- Folder name / rename modal -->
+<div class="modal-overlay" id="folder-modal" onclick="if(event.target===this)closeFolderModal()">
+  <div class="glass modal" onclick="event.stopPropagation()">
+    <h2 id="fm-title">Folder</h2>
+    <div class="field" id="fm-input-group">
+      <label id="fm-label">Name</label>
+      <input id="fm-input" type="text" autocomplete="off" />
+    </div>
+    <div class="field" id="fm-select-group" style="display:none">
+      <label>Folder</label>
+      <select id="fm-select"></select>
+    </div>
+    <div class="modal-error" id="fm-error"></div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeFolderModal()">Cancel</button>
+      <button class="btn btn-primary" id="fm-confirm" onclick="confirmFolderModal()">OK</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // ─────────────────────────────────────────────────────────────
 //  GlassRSS — live client-side reader
@@ -659,6 +680,7 @@ let currentId = null;
 let refreshing = false;
 const collapsedFolders = new Set();
 let dragFeedId = null;
+const failedFeeds = new Set();
 
 function faviconUrl(feedUrl) {
   try { return `https://www.google.com/s2/favicons?domain=${new URL(feedUrl).hostname}&sz=32`; }
@@ -725,29 +747,73 @@ function loadCustomFolders() {
 function saveCustomFolders() {
   try { localStorage.setItem(FLDR, JSON.stringify(customFolders)); } catch(e) {}
 }
+// ── Folder mini-modal ─────────────────────────────────────────
+let _fmCallback = null;
+function openFolderModal({ title, label, placeholder, value, confirmText, useSelect, selectOptions, selectValue, callback }) {
+  document.getElementById('fm-title').textContent = title;
+  document.getElementById('fm-confirm').textContent = confirmText || 'OK';
+  document.getElementById('fm-error').textContent = '';
+  _fmCallback = callback;
+  if (useSelect) {
+    document.getElementById('fm-input-group').style.display = 'none';
+    document.getElementById('fm-select-group').style.display = '';
+    const sel = document.getElementById('fm-select');
+    sel.innerHTML = (selectOptions || []).map(o => `<option value="${esc(o.value)}">${esc(o.label)}</option>`).join('');
+    sel.value = selectValue || '';
+  } else {
+    document.getElementById('fm-select-group').style.display = 'none';
+    document.getElementById('fm-input-group').style.display = '';
+    document.getElementById('fm-label').textContent = label || 'Name';
+    const inp = document.getElementById('fm-input');
+    inp.placeholder = placeholder || '';
+    inp.value = value || '';
+  }
+  document.getElementById('folder-modal').classList.add('open');
+  if (!useSelect) setTimeout(() => document.getElementById('fm-input').focus(), 50);
+}
+function closeFolderModal() {
+  document.getElementById('folder-modal').classList.remove('open');
+  _fmCallback = null;
+}
+function confirmFolderModal() {
+  const isSelect = document.getElementById('fm-select-group').style.display !== 'none';
+  const value = isSelect
+    ? document.getElementById('fm-select').value
+    : document.getElementById('fm-input').value.trim();
+  if (_fmCallback) _fmCallback(value);
+}
+
 function createFolder() {
-  const name = prompt('Folder name:');
-  if (!name) return;
-  const trimmed = name.trim();
-  if (!trimmed || customFolders.includes(trimmed)) return;
-  customFolders.push(trimmed);
-  saveCustomFolders();
-  renderSidebar();
+  openFolderModal({
+    title: 'New folder', label: 'Folder name', placeholder: 'e.g. Sports', confirmText: 'Create',
+    callback(name) {
+      if (!name) { document.getElementById('fm-error').textContent = 'Please enter a name.'; return; }
+      if (customFolders.includes(name)) { document.getElementById('fm-error').textContent = 'That folder already exists.'; return; }
+      customFolders.push(name);
+      saveCustomFolders();
+      renderSidebar();
+      closeFolderModal();
+    }
+  });
 }
 function renameFolder(ev, oldName) {
   ev.stopPropagation();
-  const newName = prompt('Rename folder:', oldName);
-  if (!newName) return;
-  const trimmed = newName.trim();
-  if (!trimmed || trimmed === oldName) return;
-  feeds.forEach(f => { if (f.folder === oldName) f.folder = trimmed; });
-  saveFeeds();
-  const idx = customFolders.indexOf(oldName);
-  if (idx !== -1) customFolders[idx] = trimmed;
-  saveCustomFolders();
-  if (collapsedFolders.has(oldName)) { collapsedFolders.delete(oldName); collapsedFolders.add(trimmed); }
-  if (currentView === 'folder:' + oldName) currentView = 'folder:' + trimmed;
-  renderSidebar();
+  openFolderModal({
+    title: 'Rename folder', label: 'New name', value: oldName, confirmText: 'Rename',
+    callback(newName) {
+      if (!newName) { document.getElementById('fm-error').textContent = 'Please enter a name.'; return; }
+      if (newName === oldName) { closeFolderModal(); return; }
+      feeds.forEach(f => { if (f.folder === oldName) f.folder = newName; });
+      saveFeeds();
+      const idx = customFolders.indexOf(oldName);
+      if (idx !== -1) customFolders[idx] = newName;
+      saveCustomFolders();
+      if (collapsedFolders.has(oldName)) { collapsedFolders.delete(oldName); collapsedFolders.add(newName); }
+      if (currentView === 'folder:' + oldName) currentView = 'folder:' + newName;
+      renderSidebar();
+      closeFolderModal();
+    }
+  });
 }
 function loadState() {
   try { return JSON.parse(localStorage.getItem(SKEY)) || {}; } catch (e) { return {}; }
@@ -826,6 +892,7 @@ async function refreshAll() {
   const state = loadState();
   const collected = [];
   const failed = [];
+  failedFeeds.clear();
 
   await Promise.all(feeds.map(async (f) => {
     try {
@@ -849,6 +916,7 @@ async function refreshAll() {
     } catch (e) {
       console.error('[FrontPageRSS] Failed to load feed:', f.name, f.url, e);
       failed.push(f.name + ' (' + (e && e.message ? e.message : 'unknown') + ')');
+      failedFeeds.add(f.id);
     }
   }));
 
@@ -997,6 +1065,7 @@ function renderFeedItem(f) {
       <img class="feed-favicon" src="${faviconUrl(f.url)}" alt=""
            onerror="this.style.display='none';this.insertAdjacentHTML('afterend','<div class=\\'dot\\' style=\\'background:${esc(f.color)}\\'></div>')">
       <span class="feed-name">${esc(f.name)}</span>
+      ${failedFeeds.has(f.id) ? `<svg title="Failed to load" viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="2" width="12" height="12" style="flex-shrink:0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>` : ''}
       ${unread > 0 ? `<span class="badge-new" title="${unread} unread">${unread}</span>` : ''}
       <button class="feed-folder-btn" title="Move to folder" onclick="assignFolder(event,'${f.id}')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
@@ -1027,9 +1096,19 @@ function renderList() {
         <span class="item-time">${esc(relativeTime(a.date))}</span>
       </div>
     </div>`).join('') ||
-    `<div style="padding:32px 18px;font-size:13px;color:var(--text-muted);text-align:center;">
-       ${refreshing ? 'Loading…' : 'No articles'}
-     </div>`;
+    (() => {
+      if (refreshing) return `<div style="padding:32px 18px;font-size:13px;color:var(--text-muted);text-align:center;">Loading…</div>`;
+      const feedId = currentView.startsWith('feed:') ? currentView.slice(5) : null;
+      if (feedId && failedFeeds.has(feedId)) {
+        const f = feeds.find(x => x.id === feedId);
+        return `<div style="padding:32px 18px;text-align:center;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="1.5" width="32" height="32" style="margin-bottom:10px;opacity:0.7"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <div style="font-size:13px;color:var(--text-secondary);margin-bottom:4px">Couldn't load ${esc(f ? f.name : 'this feed')}</div>
+          <div style="font-size:11.5px;color:var(--text-muted)">Check your connection or try refreshing.</div>
+        </div>`;
+      }
+      return `<div style="padding:32px 18px;font-size:13px;color:var(--text-muted);text-align:center;">No articles</div>`;
+    })();
 }
 
 function renderReader(a) {
@@ -1311,12 +1390,20 @@ function assignFolder(ev, feedId) {
   ev.stopPropagation();
   const f = feeds.find(x => x.id === feedId);
   if (!f) return;
-  const name = prompt('Folder name (leave blank to remove from folder):', f.folder || '');
-  if (name === null) return; // cancelled
-  const trimmed = name.trim();
-  f.folder = trimmed || undefined;
-  saveFeeds();
-  renderSidebar();
+  const allFolderNames = [...new Set([...feeds.filter(x => x.folder).map(x => x.folder), ...customFolders])];
+  openFolderModal({
+    title: 'Move "' + f.name + '"',
+    useSelect: true,
+    selectOptions: [{ value: '', label: 'No folder' }, ...allFolderNames.map(n => ({ value: n, label: n }))],
+    selectValue: f.folder || '',
+    confirmText: 'Move',
+    callback(folderName) {
+      f.folder = folderName || undefined;
+      saveFeeds();
+      renderSidebar();
+      closeFolderModal();
+    }
+  });
 }
 
 function removeFeed(ev, id) {
@@ -1333,8 +1420,9 @@ function removeFeed(ev, id) {
 
 // ── Keyboard: Esc closes modal ───────────────────────────────
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') closeModal();
+  if (e.key === 'Escape') { closeModal(); closeFolderModal(); }
   if (e.key === 'Enter' && document.getElementById('modal').classList.contains('open')) submitFeed();
+  if (e.key === 'Enter' && document.getElementById('folder-modal').classList.contains('open')) confirmFolderModal();
 });
 
 // ── Boot ─────────────────────────────────────────────────────
