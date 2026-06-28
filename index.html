@@ -296,6 +296,7 @@
   .btn-primary { background: var(--accent-dim); border-color: rgba(107,76,42,0.4); color: var(--accent); }
   .btn-primary:hover { background: rgba(107,76,42,0.22); }
   .btn-star.starred { color: var(--khaki); border-color: rgba(200,183,138,0.4); background: rgba(200,183,138,0.12); }
+  .btn.read-active { color: var(--accent); border-color: rgba(107,76,42,0.35); background: var(--accent-dim); }
 
   @keyframes fadeUp { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
   .anim { animation: fadeUp 0.22s ease; }
@@ -626,7 +627,7 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
           Star
         </button>
-        <button class="btn" onclick="markRead()">
+        <button class="btn" id="btn-read" onclick="toggleRead()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
           Mark read
         </button>
@@ -1191,6 +1192,15 @@ function renderReader(a) {
     star.classList.remove('starred');
     star.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> Star`;
   }
+
+  const readBtn = document.getElementById('btn-read');
+  if (a.unread) {
+    readBtn.classList.remove('read-active');
+    readBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polyline points="20 6 9 17 4 12"/></svg> Mark read`;
+  } else {
+    readBtn.classList.add('read-active');
+    readBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> Mark unread`;
+  }
 }
 
 async function loadFullArticle() {
@@ -1304,11 +1314,11 @@ function toggleStar() {
   renderAll();
 }
 
-function markRead() {
+function toggleRead() {
   const a = articles.find(x => x.id === currentId);
   if (!a) return;
-  a.unread = false;
-  patchState(a.id, { read: true });
+  a.unread = !a.unread;
+  patchState(a.id, { read: !a.unread });
   renderAll();
 }
 
