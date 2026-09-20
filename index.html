@@ -713,12 +713,10 @@ const DEFAULT_FEEDS = [
 
 const PALETTE = ['#5b9ee0','#c8b78a','#8fa9c4','#3f6fa8','#9caf88','#b08d57','#7ba7d0','#d0b97f'];
 
-// Proxies tried in order until one returns content. Both return raw feed text.
-// Note: allorigins.win blocks localhost origins — excluded intentionally.
 const PROXIES = [
+  (u) => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
   (u) => `https://corsproxy.io/?url=${encodeURIComponent(u)}`,
   (u) => `https://api.codetabs.com/v1/proxy/?quest=${encodeURIComponent(u)}`,
-  (u) => `https://thingproxy.freeboard.io/fetch/${u}`,
 ];
 
 let feeds = [];
@@ -944,48 +942,50 @@ async function refreshAll() {
   const failed = [];
   failedFeeds.clear();
 
-  await Promise.all(feeds.map(async (f) => {
-    try {
-      const xml = await fetchViaProxy(f.url);
-      const parsed = parseFeed(xml);
-      if (f.autoName && parsed.title) { f.name = parsed.title; f.autoName = false; }
-      for (const it of parsed.items) {
-        const link = it.link || '';
-        const id = link || (f.id + ':' + it.title);
-        const st = state[id] || {};
-        collected.push({
-          id, feedId: f.id, feedName: f.name, feedColor: f.color, feedUrl: f.url,
-          title: it.title || '(untitled)',
-          summary: stripHTML(it.summary).slice(0, 4000),
-          url: link,
-          date: Date.parse(it.date) || null,
-          unread: !st.read,
-          starred: !!st.starred,
-        });
+  try {
+    await Promise.all(feeds.map(async (f) => {
+      try {
+        const xml = await fetchViaProxy(f.url);
+        const parsed = parseFeed(xml);
+        if (f.autoName && parsed.title) { f.name = parsed.title; f.autoName = false; }
+        for (const it of parsed.items) {
+          const link = it.link || '';
+          const id = link || (f.id + ':' + it.title);
+          const st = state[id] || {};
+          collected.push({
+            id, feedId: f.id, feedName: f.name, feedColor: f.color, feedUrl: f.url,
+            title: it.title || '(untitled)',
+            summary: stripHTML(it.summary).slice(0, 4000),
+            url: link,
+            date: Date.parse(it.date) || null,
+            unread: !st.read,
+            starred: !!st.starred,
+          });
+        }
+      } catch (e) {
+        console.error('[FrontPageRSS] Failed to load feed:', f.name, f.url, e);
+        failed.push(f.name + ' (' + (e && e.message ? e.message : 'unknown') + ')');
+        failedFeeds.add(f.id);
       }
-    } catch (e) {
-      console.error('[FrontPageRSS] Failed to load feed:', f.name, f.url, e);
-      failed.push(f.name + ' (' + (e && e.message ? e.message : 'unknown') + ')');
-      failedFeeds.add(f.id);
+    }));
+
+    // Dedupe by id, newest first
+    const map = new Map();
+    for (const a of collected) map.set(a.id, a);
+    articles = [...map.values()].sort((a, b) => (b.date || 0) - (a.date || 0));
+    saveFeeds();
+  } finally {
+    refreshing = false;
+    setRefreshing(false);
+    renderAll();
+
+    if (collected.length === 0 && failed.length) {
+      setStatus('Could not load feeds — check connection or proxy', false);
+    } else if (failed.length) {
+      setStatus('Updated ' + clockNow() + ' · failed: ' + failed.join(', '), false);
+    } else {
+      setStatus('Updated ' + clockNow(), false);
     }
-  }));
-
-  // Dedupe by id, newest first
-  const map = new Map();
-  for (const a of collected) map.set(a.id, a);
-  articles = [...map.values()].sort((a, b) => (b.date || 0) - (a.date || 0));
-
-  saveFeeds();
-  refreshing = false;
-  setRefreshing(false);
-  renderAll();
-
-  if (collected.length === 0 && failed.length) {
-    setStatus('Could not load feeds — check connection or proxy', false);
-  } else if (failed.length) {
-    setStatus('Updated ' + clockNow() + ' · failed: ' + failed.join(', '), false);
-  } else {
-    setStatus('Updated ' + clockNow(), false);
   }
 }
 
