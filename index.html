@@ -713,11 +713,12 @@ const DEFAULT_FEEDS = [
 
 const PALETTE = ['#5b9ee0','#c8b78a','#8fa9c4','#3f6fa8','#9caf88','#b08d57','#7ba7d0','#d0b97f'];
 
+// Each proxy entry: { fetch: url→proxyUrl, json: bool (true = extract .contents from JSON response) }
 const PROXIES = [
-  (u) => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
-  (u) => `https://api.codetabs.com/v1/proxy/?quest=${encodeURIComponent(u)}`,
-  (u) => `https://thingproxy.freeboard.io/fetch/${u}`,
-  (u) => `https://corsproxy.io/?${encodeURIComponent(u)}`,
+  { fetch: (u) => `https://api.allorigins.win/get?url=${encodeURIComponent(u)}`,        json: true  },
+  { fetch: (u) => `https://api.codetabs.com/v1/proxy/?quest=${encodeURIComponent(u)}`,  json: false },
+  { fetch: (u) => `https://thingproxy.freeboard.io/fetch/${u}`,                         json: false },
+  { fetch: (u) => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,        json: false },
 ];
 
 let feeds = [];
@@ -918,13 +919,19 @@ function parseFeed(xmlText) {
 
 async function fetchViaProxy(url) {
   let lastErr;
-  for (const build of PROXIES) {
+  for (const proxy of PROXIES) {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 15000);
     try {
-      const res = await fetch(build(url), { cache: 'no-store', signal: controller.signal });
+      const res = await fetch(proxy.fetch(url), { cache: 'no-store', signal: controller.signal });
       if (!res.ok) throw new Error('HTTP ' + res.status);
-      const text = await res.text();
+      let text;
+      if (proxy.json) {
+        const j = await res.json();
+        text = j && j.contents;
+      } else {
+        text = await res.text();
+      }
       if (text && text.trim().length > 50) return text;
       throw new Error('Empty response');
     } catch (e) { lastErr = e; } finally { clearTimeout(timer); }
