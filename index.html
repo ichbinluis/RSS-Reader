@@ -715,8 +715,9 @@ const PALETTE = ['#5b9ee0','#c8b78a','#8fa9c4','#3f6fa8','#9caf88','#b08d57','#7
 
 const PROXIES = [
   (u) => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
-  (u) => `https://corsproxy.io/?url=${encodeURIComponent(u)}`,
   (u) => `https://api.codetabs.com/v1/proxy/?quest=${encodeURIComponent(u)}`,
+  (u) => `https://thingproxy.freeboard.io/fetch/${u}`,
+  (u) => `https://corsproxy.io/?${encodeURIComponent(u)}`,
 ];
 
 let feeds = [];
@@ -919,7 +920,7 @@ async function fetchViaProxy(url) {
   let lastErr;
   for (const build of PROXIES) {
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 8000);
+    const timer = setTimeout(() => controller.abort(), 15000);
     try {
       const res = await fetch(build(url), { cache: 'no-store', signal: controller.signal });
       if (!res.ok) throw new Error('HTTP ' + res.status);
