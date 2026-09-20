@@ -718,6 +718,13 @@ const PROXIES = [
   (u) => `https://api.codetabs.com/v1/proxy/?quest=${encodeURIComponent(u)}`,
 ];
 
+// General-purpose CORS proxies for fetching raw HTML (rss2json returns JSON, not HTML)
+const ARTICLE_PROXIES = [
+  (u) => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
+  (u) => `https://api.codetabs.com/v1/proxy/?quest=${encodeURIComponent(u)}`,
+  (u) => `https://thingproxy.freeboard.io/fetch/${encodeURIComponent(u)}`,
+];
+
 let feeds = [];
 let articles = [];
 let customFolders = [];      // user-created folder names (persisted)
@@ -935,6 +942,22 @@ function parseFeed(xmlText) {
 async function fetchViaProxy(url) {
   let lastErr;
   for (const build of PROXIES) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 15000);
+    try {
+      const res = await fetch(build(url), { cache: 'no-store', signal: controller.signal });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const text = await res.text();
+      if (text && text.trim().length > 50) return text;
+      throw new Error('Empty response');
+    } catch (e) { lastErr = e; } finally { clearTimeout(timer); }
+  }
+  throw lastErr || new Error('All proxies failed');
+}
+
+async function fetchArticleHtml(url) {
+  let lastErr;
+  for (const build of ARTICLE_PROXIES) {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 15000);
     try {
@@ -1245,7 +1268,7 @@ async function loadFullArticle() {
 
   try {
     if (typeof Readability === 'undefined') throw new Error('Readability library not loaded');
-    const html = await fetchViaProxy(a.url);
+    const html = await fetchArticleHtml(a.url);
     const doc = new DOMParser().parseFromString(html, 'text/html');
 
     // Fix relative URLs so images load correctly
